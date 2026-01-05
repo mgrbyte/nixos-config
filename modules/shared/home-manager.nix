@@ -7,7 +7,8 @@ let name = "Matt Russell";
   # Shared shell configuration
   zsh = {
     enable = true;
-    autocd = false;
+    autocd = true;
+    enableCompletion = true;
     cdpath = [ "~/Projects" ];
     plugins = [
       {
@@ -61,24 +62,125 @@ let name = "Matt Russell";
 
       # Always color ls and group directories
       alias ls='ls --color=auto'
+      alias ll='ls -lh'
+
+      # Grep aliases
+      alias grep='grep --color=auto'
+      alias rgrep='grep -H -r -n'
+      alias rgrep-ts='rgrep --include="*.ts" --include="*.tsx"'
+      alias rgrep-clj='rgrep --include="*.clj"'
+      alias rgrep-py='rgrep --include="*.py"'
+      alias rgrep-toml='rgrep --include="*.toml"'
+      alias rgrep-j2='rgrep --include="*.j2" --include="*.jinja" --include="*.jinja2"'
+      alias rgrep-md='rgrep --include="*.md"'
+
+      # Locale settings
+      export LANGUAGE="en_GB:en"
+      export LC_ALL="en_GB.UTF-8"
+      export LC_COLLATE="en_GB.UTF-8"
+      export LC_CTYPE="en_GB.UTF-8"
+      export LC_MESSAGES="en_GB.UTF-8"
+      export LESSCHARSET="utf-8"
+
+      # XDG base directory
+      export XDG_CONFIG_HOME="''${HOME}/.config"
+
+      # direnv hook
+      eval "$(direnv hook zsh)"
+
+      # Completion settings
+      zstyle ':completion:*' menu select
+      zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
+
+      # SSH completion - use known_hosts and config for host completion
+      zstyle ':completion:*:(ssh|scp|rsync):*' hosts-host-aliases yes
+      zstyle ':completion:*:(ssh|scp|rsync):*' hosts-ipaddr yes
+
+      # SSH key management via keychain
+      if command -v keychain &>/dev/null; then
+          ssh_private_keys=$(grep -slR "PRIVATE" ~/.ssh/)
+          keychain --quick --quiet --nogui ''${ssh_private_keys}
+          unset ssh_private_keys
+          source ''${HOME}/.keychain/$(hostname)-sh
+      fi
+
+      # Load work environment (API keys)
+      if [ -e "''${HOME}/.work.env" ]; then
+          source "''${HOME}/.work.env"
+      fi
     '';
   };
 
   git = {
     enable = true;
-    ignores = [ "*.swp" ];
-    userName = name;
-    userEmail = email;
+    ignores = [
+      # Vim/Emacs
+      "*.swp"
+      "*~"
+      ".dir-locals.el"
+      # Serena MCP server
+      ".serena/"
+      # JetBrains IDEs
+      ".idea/**/workspace.xml"
+      ".idea/**/tasks.xml"
+      ".idea/**/usage.statistics.xml"
+      ".idea/**/dictionaries"
+      ".idea/**/shelf"
+      ".idea/**/aws.xml"
+      ".idea/**/contentModel.xml"
+      ".idea/**/dataSources/"
+      ".idea/**/dataSources.ids"
+      ".idea/**/dataSources.local.xml"
+      ".idea/**/sqlDataSources.xml"
+      ".idea/**/dynamic.xml"
+      ".idea/**/uiDesigner.xml"
+      ".idea/**/dbnavigator.xml"
+      ".idea/**/gradle.xml"
+      ".idea/**/libraries"
+      ".idea/**/mongoSettings.xml"
+      ".idea_modules/"
+      ".idea/**/sonarlint/"
+      ".idea/sonarlint.xml"
+      ".idea/httpRequests"
+      "*.iws"
+      "out/"
+      "atlassian-ide-plugin.xml"
+      ".idea/replstate.xml"
+      "com_crashlytics_export_strings.xml"
+      "crashlytics.properties"
+      "crashlytics-build.properties"
+      "fabric.properties"
+      "http-client.private.env.json"
+      ".idea/caches/build_file_checksums.ser"
+      # VSCode
+      ".vscode/*"
+      "!.vscode/settings.json"
+      "!.vscode/tasks.json"
+      "!.vscode/launch.json"
+      "!.vscode/extensions.json"
+      "!.vscode/*.code-snippets"
+      "*.vsix"
+    ];
     lfs = {
       enable = true;
     };
-    extraConfig = {
+    settings = {
+      user = {
+        name = name;
+        email = email;
+        signingkey = "AC61E672F0A921B7";
+      };
+      alias = {
+        ci = "commit";
+        chp = "cherry-pick";
+      };
       init.defaultBranch = "main";
       core = {
-	    editor = "vim";
+        editor = "emacsclient -t";
         autocrlf = "input";
       };
       commit.gpgsign = true;
+      tag.gpgsign = true;
       pull.rebase = true;
       rebase.autoStash = true;
     };
@@ -194,71 +296,6 @@ let name = "Matt Russell";
       let g:airline_powerline_fonts = 1
       '';
      };
-
-  alacritty = {
-    enable = true;
-    settings = {
-      cursor = {
-        style = "Block";
-      };
-
-      window = {
-        opacity = 1.0;
-        padding = {
-          x = 24;
-          y = 24;
-        };
-      };
-
-      # Fix for shell path when launching from desktop
-      # When launching from desktop, $SHELL may point to /bin/zsh instead of
-      # the Nix-managed shell, causing environment issues
-      terminal.shell = {
-        program = "${pkgs.zsh}/bin/zsh";
-      };
-
-      font = {
-        normal = {
-          family = "MesloLGS NF";
-          style = "Regular";
-        };
-        size = lib.mkMerge [
-          (lib.mkIf pkgs.stdenv.hostPlatform.isLinux 10)
-          (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin 14)
-        ];
-      };
-
-
-      colors = {
-        primary = {
-          background = "0x1f2528";
-          foreground = "0xc0c5ce";
-        };
-
-        normal = {
-          black = "0x1f2528";
-          red = "0xec5f67";
-          green = "0x99c794";
-          yellow = "0xfac863";
-          blue = "0x6699cc";
-          magenta = "0xc594c5";
-          cyan = "0x5fb3b3";
-          white = "0xc0c5ce";
-        };
-
-        bright = {
-          black = "0x65737e";
-          red = "0xec5f67";
-          green = "0x99c794";
-          yellow = "0xfac863";
-          blue = "0x6699cc";
-          magenta = "0xc594c5";
-          cyan = "0x5fb3b3";
-          white = "0xd8dee9";
-        };
-      };
-    };
-  };
 
   ssh = {
     enable = true;

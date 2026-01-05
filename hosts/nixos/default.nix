@@ -291,14 +291,14 @@ let user = "mtr21pqh";
     dejavu_fonts
     emacs-all-the-icons-fonts
     feather-font # from overlay
-    jetbrains-mono
+    nerd-fonts.ubuntu-mono
     font-awesome
     noto-fonts
     noto-fonts-color-emoji
   ];
 
   environment.systemPackages = with pkgs; [
-    agenix.packages."${pkgs.system}".default # "x86_64-linux"
+    agenix.packages."${pkgs.stdenv.hostPlatform.system}".default # "x86_64-linux"
     gitFull
     inetutils
   ];

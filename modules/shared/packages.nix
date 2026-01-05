@@ -2,7 +2,6 @@
 
 with pkgs; [
   # General packages for development and system management
-  alacritty
   bash-completion
   bat
   btop
@@ -17,6 +16,7 @@ with pkgs; [
   age
   age-plugin-yubikey
   gnupg
+  keychain
   libfido2
 
   # Cloud-related tools and SDKs
@@ -35,7 +35,6 @@ with pkgs; [
   hack-font
   noto-fonts
   noto-fonts-color-emoji
-  meslo-lgs-nf
 
   # Node.js development tools
   nodejs_24

@@ -34,10 +34,18 @@ let user = "mtr21pqh"; in
 
   # Turn off NIX_PATH warnings now that we're using flakes
 
+  # System-wide fonts available to all macOS applications
+  fonts.packages = with pkgs; [
+    nerd-fonts.inconsolata
+    font-awesome
+    noto-fonts
+    noto-fonts-color-emoji
+  ];
+
   # Load configuration that is shared across systems
   environment.systemPackages = with pkgs; [
     emacs-unstable
-    agenix.packages."${pkgs.system}".default
+    agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
   ] ++ (import ../../modules/shared/packages.nix { inherit pkgs; });
 
   launchd.user.agents.emacs.path = [ config.environment.systemPath ];
