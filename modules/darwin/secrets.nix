@@ -55,4 +55,14 @@ let user = "mtr21pqh"; in
     owner = "${user}";
     group = "staff";
   };
+
+  # SSH config_external
+  age.secrets."ssh-config-external" = {
+    symlink = true;
+    path = "/Users/${user}/.ssh/config_external";
+    file = "${secrets}/ssh-config-external.age";
+    mode = "600";
+    owner = "${user}";
+    group = "staff";
+  };
 }
