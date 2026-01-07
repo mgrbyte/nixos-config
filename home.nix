@@ -6,10 +6,13 @@ let
   email = "m.russell@bangor.ac.uk";
   isDarwin = pkgs.stdenv.isDarwin;
   isLinux = pkgs.stdenv.isLinux;
+  homeDir = if isDarwin then "/Users/${user}" else "/home/${user}";
+  # PATH with nix-profile first - used by both .zshenv and launchd
+  nixPath = "${homeDir}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 in
 {
   home.username = user;
-  home.homeDirectory = if isDarwin then "/Users/${user}" else "/home/${user}";
+  home.homeDirectory = homeDir;
   home.stateVersion = "23.11";
 
   programs.home-manager.enable = true;
@@ -44,6 +47,9 @@ in
 
     # LLMs
     claude-code
+
+    # Emacs
+    emacs
 
     # Cloud-related tools and SDKs
     docker
@@ -81,7 +87,6 @@ in
     tree
     unrar
     unzip
-    zsh-prezto
 
     # Programming languages and runtimes
     go
@@ -119,10 +124,6 @@ in
       recursive = true;
     };
 
-    # ZSH configuration
-    ".config/zsh/init.zsh".source = ./config/zsh/init.zsh;
-    ".config/zsh/completion.zsh".source = ./config/zsh/completion.zsh;
-
     # GPG agent configuration with nix-managed pinentry path
     ".gnupg/gpg-agent.conf".text = ''
       enable-ssh-support
@@ -144,10 +145,156 @@ in
     autocd = true;
     enableCompletion = true;
     cdpath = [ "~/Projects" ];
-    plugins = [];
-    initContent = lib.mkBefore ''
-      source "${config.home.homeDirectory}/.config/zsh/init.zsh"
+
+    # Environment variables (.zshenv) - sourced for ALL shells
+    envExtra = ''
+      # Nix daemon
+      if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
+        . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+        . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
+      fi
+
+      # PATH with nix-profile first
+      export PATH="${nixPath}"
+      export PATH="$HOME/.pnpm-packages/bin:$HOME/.pnpm-packages:$PATH"
+      export PATH="$HOME/.npm-packages/bin:$HOME/bin:$PATH"
+      export PATH="$HOME/.local/share/bin:$PATH"
+
+      # Editor
+      export ALTERNATE_EDITOR=""
+      export EDITOR="emacsclient -t"
+      export VISUAL="emacs -Q -nw"
+
+      # Locale
+      export LANGUAGE="en_GB:en"
+      export LC_ALL="en_GB.UTF-8"
+      export LC_COLLATE="en_GB.UTF-8"
+      export LC_CTYPE="en_GB.UTF-8"
+      export LC_MESSAGES="en_GB.UTF-8"
+      export LESSCHARSET="utf-8"
+
+      # XDG
+      export XDG_CONFIG_HOME="$HOME/.config"
+
+      # History
+      export HISTIGNORE="pwd:ls:cd"
     '';
+
+    # Interactive shell config (.zshrc)
+    initContent = ''
+      # Emacs helper
+      e() { emacsclient -t "$@"; }
+
+      # Sync starship config to dot-files repo
+      sync-starship() {
+        if [[ -d ~/github/mgrbyte/dot-files/starship ]]; then
+          cp ~/.config/starship.toml ~/github/mgrbyte/dot-files/starship/starship.toml
+          echo "Synced starship config to dot-files"
+        else
+          echo "dot-files/starship directory not found"
+        fi
+      }
+
+      # direnv hook
+      eval "$(direnv hook zsh)"
+
+      # Completion settings
+      zstyle ':completion:*' menu select
+      zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
+      zstyle ':completion:*:(ssh|scp|rsync):*' hosts-host-aliases yes
+      zstyle ':completion:*:(ssh|scp|rsync):*' hosts-ipaddr yes
+
+      # Emacs keybindings
+      bindkey -e
+      bindkey '^[^?' backward-kill-word
+      bindkey '^[[3;3~' kill-word
+
+      # Treat path segments as separate words
+      WORDCHARS=''${WORDCHARS/\//}
+
+      # SSH key management via keychain
+      if command -v keychain &>/dev/null; then
+        ssh_private_keys=$(grep -slR "PRIVATE" ~/.ssh/)
+        keychain --quick --quiet --nogui ''${ssh_private_keys}
+        unset ssh_private_keys
+        source ''${HOME}/.keychain/$(hostname)-sh
+      fi
+
+      # Load work environment (API keys)
+      if [[ -e "$HOME/.work.env" ]]; then
+        source "$HOME/.work.env"
+      fi
+
+      # Auto-sync starship on login
+      sync-starship >/dev/null 2>&1
+
+      # === Completion options (from zprezto) ===
+      setopt COMPLETE_IN_WORD
+      setopt ALWAYS_TO_END
+      setopt PATH_DIRS
+      setopt AUTO_LIST
+      setopt AUTO_PARAM_SLASH
+      setopt EXTENDED_GLOB
+      setopt MENU_COMPLETE
+      unsetopt CASE_GLOB
+
+      # Completion caching
+      zstyle ':completion::complete:*' use-cache on
+      zstyle ':completion::complete:*' cache-path "$XDG_CACHE_HOME/.zcompcache"
+
+      # Case-insensitive completion
+      zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*' 'l:|=* r:|=*'
+
+      # Fuzzy match
+      zstyle ':completion:*' completer _complete _match _approximate
+      zstyle ':completion:*:match:*' original only
+      zstyle ':completion:*:approximate:*' max-errors 1 numeric
+      zstyle -e ':completion:*:approximate:*' max-errors 'reply=($((($#PREFIX+$#SUFFIX)/3>7?7:($#PREFIX+$#SUFFIX)/3))numeric)'
+
+      # Don't complete unavailable commands
+      zstyle ':completion:*:functions' ignored-patterns '(_*|pre(cmd|exec))'
+
+      # Directories
+      zstyle ':completion:*:default' list-colors ''${(s.:.)LS_COLORS}
+      zstyle ':completion:*:*:cd:*' tag-order local-directories directory-stack path-directories
+      zstyle ':completion:*:*:cd:*:directory-stack' menu yes select
+      zstyle ':completion:*:-tilde-:*' group-order 'named-directories' 'path-directories' 'users' 'expand'
+      zstyle ':completion:*' squeeze-slashes true
+
+      # SSH/SCP/RSYNC completion
+      zstyle ':completion:*:(ssh|scp|rsync):*' tag-order 'hosts:-host:host hosts:-domain:domain hosts:-ipaddr:ip\ address *'
+      zstyle ':completion:*:(scp|rsync):*' group-order users files all-files hosts-domain hosts-host hosts-ipaddr
+      zstyle ':completion:*:ssh:*' group-order users hosts-domain hosts-host users hosts-ipaddr
+    '';
+
+    shellAliases = {
+      # Ripgrep
+      search = "rg -p --glob '!node_modules/*'";
+      rg-clj = "rg --type=clojure";
+      rg-j2 = "rg --type=jinja";
+      rg-md = "rg --type=markdown";
+      rg-py = "rg --type=python";
+      rg-toml = "rg --type=toml";
+      rg-ts = "rg --type=typescript";
+
+      # ls
+      ls = "ls --color=auto";
+      ll = "ls -lh";
+      l = "ls -l";
+      la = "ls -a";
+
+      # difftastic
+      diff = "difft";
+    };
+
+    # Antidote plugin manager
+    antidote = {
+      enable = true;
+      plugins = [
+        "zsh-users/zsh-autosuggestions"
+        "ohmyzsh/ohmyzsh path:lib/git.zsh"
+      ];
+    };
   };
 
   programs.starship = {
@@ -224,43 +371,43 @@ in
       "*~"
       ".dir-locals.el"
       ".serena/"
-      ".idea/**/workspace.xml"
-      ".idea/**/tasks.xml"
-      ".idea/**/usage.statistics.xml"
-      ".idea/**/dictionaries"
-      ".idea/**/shelf"
       ".idea/**/aws.xml"
       ".idea/**/contentModel.xml"
-      ".idea/**/dataSources/"
       ".idea/**/dataSources.ids"
       ".idea/**/dataSources.local.xml"
-      ".idea/**/sqlDataSources.xml"
-      ".idea/**/dynamic.xml"
-      ".idea/**/uiDesigner.xml"
+      ".idea/**/dataSources/"
       ".idea/**/dbnavigator.xml"
+      ".idea/**/dictionaries"
+      ".idea/**/dynamic.xml"
       ".idea/**/gradle.xml"
       ".idea/**/libraries"
       ".idea/**/mongoSettings.xml"
-      ".idea_modules/"
+      ".idea/**/shelf"
       ".idea/**/sonarlint/"
-      ".idea/sonarlint.xml"
+      ".idea/**/sqlDataSources.xml"
+      ".idea/**/tasks.xml"
+      ".idea/**/uiDesigner.xml"
+      ".idea/**/usage.statistics.xml"
+      ".idea/**/workspace.xml"
       ".idea/httpRequests"
+      ".idea/replstate.xml"
+      ".idea/sonarlint.xml"
+      ".idea_modules/"
       "*.iws"
       "out/"
       "atlassian-ide-plugin.xml"
-      ".idea/replstate.xml"
       "com_crashlytics_export_strings.xml"
-      "crashlytics.properties"
       "crashlytics-build.properties"
+      "crashlytics.properties"
       "fabric.properties"
       "http-client.private.env.json"
       ".idea/caches/build_file_checksums.ser"
       ".vscode/*"
+      "!.vscode/*.code-snippets"
+      "!.vscode/extensions.json"
+      "!.vscode/launch.json"
       "!.vscode/settings.json"
       "!.vscode/tasks.json"
-      "!.vscode/launch.json"
-      "!.vscode/extensions.json"
-      "!.vscode/*.code-snippets"
       "*.vsix"
     ];
     settings = {
@@ -270,13 +417,36 @@ in
         signingkey = "AC61E672F0A921B7";
       };
       alias = {
-        ci = "commit";
+        br = "branch";
+        cb = "checkout -b";
         chp = "cherry-pick";
+        ci = "commit";
+        co = "checkout";
+        db = "branch -D";
+        df = "diff";
+        diff-all = "difftool -y -d";
+        llog = "log --oneline --graph";
+        log-unpushed = "log --no-merges";
+        lp = "log -p";
+        mnf = "merge --no-ff";
+        rh = "reset --hard";
+        rhh = "reset --hard HEAD";
+        rn = "branch -m";
+        rpo = "remote prune origin";
+        sl = "stash list";
+        st = "status -uno";
+        whatadded = "log --diff-filter=A";
       };
       init.defaultBranch = "main";
+      push.default = "simple";
       core = {
         editor = "emacsclient -t";
         autocrlf = "input";
+      };
+      # Credential helper for Techiaith storfa
+      "credential \"https://storfa.techiaith.cymru\"" = {
+        username = "oauth";
+        helper = "netrc";
       };
       commit.gpgsign = true;
       tag.gpgsign = true;
@@ -361,6 +531,9 @@ in
       KeepAlive = true;
       StandardOutPath = "/tmp/emacs-daemon.log";
       StandardErrorPath = "/tmp/emacs-daemon.err";
+      EnvironmentVariables = {
+        PATH = nixPath;
+      };
     };
   };
 }
