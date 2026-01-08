@@ -486,8 +486,8 @@ in
 
     shellAliases = {
       # Home Manager (flake-based)
-      home-manager = "nix run home-manager -- --flake ~/github/mgrbyte/nix-config";
-      hm-switch = "home-manager switch --flake ~/github/mgrbyte/nix-config#mtr21pqh";
+      home-manager = "nix run home-manager -- --flake '$HOME/github/mgrbyte/nix-config'";
+      hm-switch = "nix run home-manager -- switch --flake '$HOME/github/mgrbyte/nix-config#mtr21pqh'";
 
       # Ripgrep
       search = "rg -p --glob '!node_modules/*'";
