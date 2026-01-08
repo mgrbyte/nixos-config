@@ -26,10 +26,8 @@
       url = "github:sudosubin/home-manager-secrets";
     };
 
-    # Use local path to avoid chicken-and-egg with SSH keys
-    # Once keys are working, can switch to: url = "github:mgrbyte/nix-secrets";
     nix-secrets = {
-      url = "path:/Users/mtr21pqh/github/mgrbyte/nix-secrets";
+      url = "git+ssh://git@github.com/mgrbyte/nix-secrets";
       flake = false;
     };
   };

@@ -152,14 +152,17 @@
     "nix-secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1767692414,
-        "narHash": "sha256-9eqwO0zDNB989QvjeRLOVFvDwINBFJNYPeo1goAl9VY=",
-        "path": "/Users/mtr21pqh/github/mgrbyte/nix-secrets",
-        "type": "path"
+        "lastModified": 1767692400,
+        "narHash": "sha256-wzl5F7VpJt1MN+4gma0PMKK4Pr2iCKZpkSc010GtVFc=",
+        "ref": "refs/heads/main",
+        "rev": "808f5a4df020ac005e44dbf3c25deb7d0f82c98a",
+        "revCount": 5,
+        "type": "git",
+        "url": "ssh://git@github.com/mgrbyte/nix-secrets"
       },
       "original": {
-        "path": "/Users/mtr21pqh/github/mgrbyte/nix-secrets",
-        "type": "path"
+        "type": "git",
+        "url": "ssh://git@github.com/mgrbyte/nix-secrets"
       }
     },
     "nixpkgs": {
