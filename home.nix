@@ -1,4 +1,4 @@
-{ config, pkgs, lib, inputs, emacs-config, nix-colors, ... }:
+{ config, pkgs, lib, inputs, emacs-config, nix-colors, nix-secrets, ... }:
 
 let
   name = "Matt Russell";
@@ -63,6 +63,42 @@ in
   targets.darwin.copyApps.enable = false;
 
   # Note: With stateVersion >= 26.05 and xdg.enable = true, zsh config moves to ~/.config/zsh
+
+  # ==========================================================================
+  # SECRETS (home-manager-secrets - age-encrypted secrets for home-manager)
+  # ==========================================================================
+  secrets = {
+    # The age identity file used to decrypt secrets
+    identityPaths = [ "${homeDir}/.ssh/id_ed25519_agenix" ];
+
+    # On macOS, /run doesn't exist - use a local directory instead
+    mount = "${homeDir}/.secrets";
+
+    # Define secrets from nix-secrets repo
+    file = {
+      "id_mtr21pqh_github" = {
+        source = "${nix-secrets}/id_mtr21pqh_github.age";
+        symlinks = [ "${homeDir}/.ssh/id_mtr21pqh_github" ];
+      };
+      "id_ed25519_mtr21pqh" = {
+        source = "${nix-secrets}/id_ed25519_mtr21pqh.age";
+        symlinks = [ "${homeDir}/.ssh/id_ed25519_mtr21pqh" ];
+      };
+      "ssh-config-external" = {
+        source = "${nix-secrets}/ssh-config-external.age";
+        symlinks = [ "${homeDir}/.ssh/config_external" ];
+      };
+      "gpg-private-key" = {
+        source = "${nix-secrets}/gpg-private-key.age";
+      };
+      "huggingface-token" = {
+        source = "${nix-secrets}/huggingface-token.age";
+      };
+      "work-env" = {
+        source = "${nix-secrets}/work.env.age";
+      };
+    };
+  };
 
   # Color scheme from nix-colors (base16)
   # See available schemes: https://github.com/tinted-theming/schemes
@@ -391,10 +427,12 @@ in
       WORDCHARS=''${WORDCHARS/\//}
 
       # SSH key management via keychain
+      # Explicitly list keys since homeage symlinks don't work with grep
       if command -v keychain &>/dev/null; then
-        ssh_private_keys=$(grep -slR "PRIVATE" ~/.ssh/)
-        keychain --quick --quiet --nogui ''${ssh_private_keys}
-        unset ssh_private_keys
+        keychain --quick --quiet --nogui \
+          ~/.ssh/id_ed25519_agenix \
+          ~/.ssh/id_mtr21pqh_github \
+          ~/.ssh/id_ed25519_mtr21pqh
         source ''${HOME}/.keychain/$(hostname)-sh
       fi
 

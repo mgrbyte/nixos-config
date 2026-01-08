@@ -21,6 +21,17 @@
     nix-colors = {
       url = "github:Misterio77/nix-colors";
     };
+
+    home-manager-secrets = {
+      url = "github:sudosubin/home-manager-secrets";
+    };
+
+    # Use local path to avoid chicken-and-egg with SSH keys
+    # Once keys are working, can switch to: url = "github:mgrbyte/nix-secrets";
+    nix-secrets = {
+      url = "path:/Users/mtr21pqh/github/mgrbyte/nix-secrets";
+      flake = false;
+    };
   };
 
   outputs = { nixpkgs, home-manager, emacs-config, nix-casks, nix-colors, ... }@inputs:
@@ -31,9 +42,10 @@
 
       mkHomeConfig = system: home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
-        extraSpecialArgs = { inherit inputs emacs-config nix-colors; };
+        extraSpecialArgs = { inherit inputs emacs-config nix-colors; nix-secrets = inputs.nix-secrets; };
         modules = [
           nix-colors.homeManagerModules.default
+          inputs.home-manager-secrets.homeManagerModules.home-manager-secrets
           ./home.nix
         ];
       };
