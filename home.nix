@@ -96,6 +96,7 @@ in
       };
       "work-env" = {
         source = "${nix-secrets}/work.env.age";
+        symlinks = [ "${homeDir}/.work.env" ];
       };
     };
   };
