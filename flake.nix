@@ -30,6 +30,11 @@
       url = "git+ssh://git@github.com/mgrbyte/nix-secrets";
       flake = false;
     };
+
+    hunspell-cy = {
+      url = "github:techiaith/hunspell-cy";
+      flake = false;
+    };
   };
 
   outputs = { nixpkgs, home-manager, emacs-config, nix-casks, nix-colors, ... }@inputs:
@@ -40,7 +45,11 @@
 
       mkHomeConfig = system: home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
-        extraSpecialArgs = { inherit inputs emacs-config nix-colors; nix-secrets = inputs.nix-secrets; };
+        extraSpecialArgs = {
+          inherit inputs emacs-config nix-colors;
+          nix-secrets = inputs.nix-secrets;
+          hunspell-cy = inputs.hunspell-cy;
+        };
         modules = [
           nix-colors.homeManagerModules.default
           inputs.home-manager-secrets.homeManagerModules.home-manager-secrets

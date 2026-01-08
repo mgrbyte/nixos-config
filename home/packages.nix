@@ -51,6 +51,10 @@ in {
     noto-fonts
     noto-fonts-color-emoji
 
+    # Spell checking
+    hunspell
+    hunspellDicts.en-gb-ise
+
     # development tools / text utils
     awscli2
     curl

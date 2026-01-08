@@ -1,4 +1,4 @@
-{ config, pkgs, lib, homeDir, nix-secrets, ... }:
+{ config, pkgs, lib, homeDir, nix-secrets, hunspell-cy, ... }:
 
 let
   isDarwin = pkgs.stdenv.isDarwin;
@@ -39,6 +39,10 @@ in {
 
   # Clojure deps.edn - development aliases and tools
   home.file.".clojure/deps.edn".source = ../config/deps.edn;
+
+  # Welsh hunspell dictionary (from techiaith/hunspell-cy)
+  home.file.".local/share/hunspell/cy_GB.dic".source = "${hunspell-cy}/cy_GB.dic";
+  home.file.".local/share/hunspell/cy_GB.aff".source = "${hunspell-cy}/cy_GB.aff";
 
   # GPG agent configuration with nix-managed pinentry path
   home.file.".gnupg/gpg-agent.conf".text = ''

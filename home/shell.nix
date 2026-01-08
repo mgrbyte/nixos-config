@@ -49,6 +49,9 @@
 
       # XDG
       export XDG_CONFIG_HOME="$HOME/.config"
+
+      # Hunspell dictionaries (Welsh + English)
+      export DICPATH="$HOME/.local/share/hunspell:${pkgs.hunspellDicts.en-gb-ise}/share/hunspell"
     '';
 
     # Interactive shell config (.zshrc)
