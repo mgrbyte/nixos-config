@@ -66,6 +66,7 @@ in
     fd
     font-awesome
     hack-font
+    nerd-fonts.hack
     noto-fonts
     noto-fonts-color-emoji
 
@@ -327,17 +328,17 @@ in
       };
 
       git_status = {
-        format = "[$all_status$ahead_behind]($style)";
-        stashed = "[󱓢](#f4c430)";
-        staged = "[󰐕](#a2ff76)";
-        modified = "[](#9c6f44)";
-        deleted = "[󰆴](#ff9933)";
-        renamed = "[󰑕](#ee0000)";
-        untracked = "[](#ffddca)";
-        conflicted = "[󱈸](#b87333)";
-        ahead = "[󱖘\${count}](#ffbf00)";
-        behind = "[󱖚\${count}](#a2a2d0)";
-        diverged = "[󱡷](#edc9af)";
+        format = "[$all_status$ahead_behind]($style) ";
+        stashed = "[󰏗 ](#f4c430)";
+        staged = "[󰄬 ](#a2ff76)";
+        modified = "[󰏫 ](#daa520)";
+        deleted = "[󰅖 ](#ff9933)";
+        renamed = "[󰑕 ](#ee0000)";
+        untracked = "[󰌵 ](#ffa500)";
+        conflicted = "[󰘬 ](#b87333)";
+        ahead = "[󰁔 \${count}](#ffbf00)";
+        behind = "[󰁍 \${count}](#a2a2d0)";
+        diverged = "[󰃻 ](#edc9af)";
       };
 
       hostname = {
