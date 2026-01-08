@@ -219,6 +219,10 @@ in
       source = "${emacs-config}/lisp";
       recursive = true;
     };
+    ".emacs.d/images" = {
+      source = "${emacs-config}/images";
+      recursive = true;
+    };
 
     # GPG agent configuration with nix-managed pinentry path
     ".gnupg/gpg-agent.conf".text = ''
@@ -488,7 +492,7 @@ in
     shellAliases = {
       # Home Manager (flake-based)
       home-manager = "nix run home-manager -- --flake '$HOME/github/mgrbyte/nix-config'";
-      hm-switch = "nix run home-manager -- switch --flake '$HOME/github/mgrbyte/nix-config#mtr21pqh'";
+      hm-switch = "nix run home-manager -- switch --flake '${homeDir}/github/mgrbyte/nix-config#mtr21pqh'";
 
       # Ripgrep
       search = "rg -p --glob '!node_modules/*'";
@@ -871,13 +875,14 @@ EXEC
   launchd.agents.emacs = lib.mkIf isDarwin {
     enable = true;
     config = {
-      ProgramArguments = [ "${pkgs.emacs}/bin/emacs" "--daemon" ];
+      ProgramArguments = [ "${pkgs.emacs}/bin/emacs" "--fg-daemon" ];
       RunAtLoad = true;
       KeepAlive = true;
       StandardOutPath = "/tmp/emacs-daemon.log";
       StandardErrorPath = "/tmp/emacs-daemon.err";
       EnvironmentVariables = {
         PATH = nixPath;
+        CLAUDE_TIPS_FILE = "${homeDir}/.claude/tips.txt";
       };
     };
   };
