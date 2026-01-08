@@ -1,4 +1,4 @@
-{ config, pkgs, lib, inputs, emacs-config, ... }:
+{ config, pkgs, lib, inputs, emacs-config, nix-colors, ... }:
 
 let
   name = "Matt Russell";
@@ -9,11 +9,58 @@ let
   homeDir = if isDarwin then "/Users/${user}" else "/home/${user}";
   # PATH with nix-profile first - used by both .zshenv and launchd
   nixPath = "${homeDir}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+
+  # Helper to convert hex color to iTerm2 plist format (RGB 0.0-1.0)
+  hexToIterm = hex: let
+    r = builtins.substring 0 2 hex;
+    g = builtins.substring 2 2 hex;
+    b = builtins.substring 4 2 hex;
+    hexToDec = h: let
+      chars = lib.stringToCharacters h;
+      hexDigit = c:
+        if c == "a" || c == "A" then 10
+        else if c == "b" || c == "B" then 11
+        else if c == "c" || c == "C" then 12
+        else if c == "d" || c == "D" then 13
+        else if c == "e" || c == "E" then 14
+        else if c == "f" || c == "F" then 15
+        else lib.strings.toInt c;
+    in (hexDigit (builtins.elemAt chars 0)) * 16 + (hexDigit (builtins.elemAt chars 1));
+    toFloat = n: "${toString n}.0";
+    normalize = n: "${toString (n / 255.0)}";
+  in {
+    red = normalize (hexToDec r);
+    green = normalize (hexToDec g);
+    blue = normalize (hexToDec b);
+  };
+
+  # Generate an iTerm2 color entry
+  itermColorEntry = name: hex: let
+    c = hexToIterm hex;
+  in ''
+    <key>${name}</key>
+    <dict>
+      <key>Alpha Component</key>
+      <real>1</real>
+      <key>Blue Component</key>
+      <real>${c.blue}</real>
+      <key>Color Space</key>
+      <string>sRGB</string>
+      <key>Green Component</key>
+      <real>${c.green}</real>
+      <key>Red Component</key>
+      <real>${c.red}</real>
+    </dict>
+  '';
 in
 {
   home.username = user;
   home.homeDirectory = homeDir;
   home.stateVersion = "23.11";
+
+  # Color scheme from nix-colors (base16)
+  # See available schemes: https://github.com/tinted-theming/schemes
+  colorScheme = nix-colors.colorSchemes.dracula;
 
   programs.home-manager.enable = true;
 
@@ -44,6 +91,9 @@ in
     gnupg
     keychain
     libfido2
+
+    # Terminal
+    alacritty
 
     # LLMs
     claude-code
@@ -135,6 +185,115 @@ in
         else "${pkgs.pinentry-curses}/bin/pinentry-curses"}
       allow-emacs-pinentry
     '';
+
+    # Alacritty terminal config with nix-colors
+    ".config/alacritty/alacritty.toml".text = let
+      p = config.colorScheme.palette;
+    in ''
+      # Window padding (margins)
+      [window]
+      padding = { x = 12, y = 12 }
+      decorations = "Full"
+      opacity = 1.0
+      option_as_alt = "Both"
+
+      # Font configuration
+      [font]
+      size = 14.0
+
+      [font.normal]
+      family = "Hack Nerd Font"
+      style = "Regular"
+
+      [font.bold]
+      family = "Hack Nerd Font"
+      style = "Bold"
+
+      [font.italic]
+      family = "Hack Nerd Font"
+      style = "Italic"
+
+      # Colors from nix-colors (${config.colorScheme.slug})
+      [colors.primary]
+      background = "#${p.base00}"
+      foreground = "#${p.base05}"
+
+      [colors.cursor]
+      text = "#${p.base00}"
+      cursor = "#${p.base05}"
+
+      [colors.selection]
+      text = "#${p.base05}"
+      background = "#${p.base02}"
+
+      [colors.normal]
+      black = "#${p.base00}"
+      red = "#${p.base08}"
+      green = "#${p.base0B}"
+      yellow = "#${p.base0A}"
+      blue = "#${p.base0D}"
+      magenta = "#${p.base0E}"
+      cyan = "#${p.base0C}"
+      white = "#${p.base05}"
+
+      [colors.bright]
+      black = "#${p.base03}"
+      red = "#${p.base08}"
+      green = "#${p.base0B}"
+      yellow = "#${p.base0A}"
+      blue = "#${p.base0D}"
+      magenta = "#${p.base0E}"
+      cyan = "#${p.base0C}"
+      white = "#${p.base07}"
+
+      # Scrolling
+      [scrolling]
+      history = 10000
+      multiplier = 3
+
+      # Selection
+      [selection]
+      save_to_clipboard = true
+    '';
+
+    # iTerm2 color scheme from nix-colors (dracula)
+    # Import in iTerm2: Preferences → Profiles → Colors → Color Presets → Import
+    ".config/iterm2/nix-colors.itermcolors".text = let
+      p = config.colorScheme.palette;
+    in ''
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        ${itermColorEntry "Ansi 0 Color" p.base00}
+        ${itermColorEntry "Ansi 1 Color" p.base08}
+        ${itermColorEntry "Ansi 2 Color" p.base0B}
+        ${itermColorEntry "Ansi 3 Color" p.base0A}
+        ${itermColorEntry "Ansi 4 Color" p.base0D}
+        ${itermColorEntry "Ansi 5 Color" p.base0E}
+        ${itermColorEntry "Ansi 6 Color" p.base0C}
+        ${itermColorEntry "Ansi 7 Color" p.base05}
+        ${itermColorEntry "Ansi 8 Color" p.base03}
+        ${itermColorEntry "Ansi 9 Color" p.base08}
+        ${itermColorEntry "Ansi 10 Color" p.base0B}
+        ${itermColorEntry "Ansi 11 Color" p.base0A}
+        ${itermColorEntry "Ansi 12 Color" p.base0D}
+        ${itermColorEntry "Ansi 13 Color" p.base0E}
+        ${itermColorEntry "Ansi 14 Color" p.base0C}
+        ${itermColorEntry "Ansi 15 Color" p.base07}
+        ${itermColorEntry "Background Color" p.base00}
+        ${itermColorEntry "Badge Color" p.base0E}
+        ${itermColorEntry "Bold Color" p.base06}
+        ${itermColorEntry "Cursor Color" p.base05}
+        ${itermColorEntry "Cursor Guide Color" p.base02}
+        ${itermColorEntry "Cursor Text Color" p.base00}
+        ${itermColorEntry "Foreground Color" p.base05}
+        ${itermColorEntry "Link Color" p.base0D}
+        ${itermColorEntry "Selected Text Color" p.base05}
+        ${itermColorEntry "Selection Color" p.base02}
+      </dict>
+      </plist>
+    '';
   };
 
   # ==========================================================================
@@ -193,6 +352,9 @@ in
 
     # Interactive shell config (.zshrc)
     initContent = ''
+      # Powerlevel10k prompt config
+      [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+
       # Emacs helper
       e() { emacsclient -t "$@"; }
 
@@ -228,10 +390,8 @@ in
         source "$HOME/.work.env"
       fi
 
-      # Auto-sync starship on login
-      sync-starship >/dev/null 2>&1
-
       # === Completion options (from zprezto) ===
+      setopt IGNORE_EOF           # Prevent accidental shell exit from Ctrl+D / M-d overflow
       setopt COMPLETE_IN_WORD
       setopt ALWAYS_TO_END
       setopt PATH_DIRS
@@ -297,6 +457,7 @@ in
     antidote = {
       enable = true;
       plugins = [
+        "romkatv/powerlevel10k"
         "zsh-users/zsh-autosuggestions"
         "Aloxaf/fzf-tab"
         "ohmyzsh/ohmyzsh path:lib/git.zsh"
@@ -304,8 +465,9 @@ in
     };
   };
 
+  # Starship disabled while trying p10k - kept for fallback
   programs.starship = {
-    enable = true;
+    enable = false;  # Disable to let p10k handle prompt
     settings = {
       format = "$directory$git_branch$git_status$python$custom$nix_shell$character";
       add_newline = false;
@@ -328,17 +490,17 @@ in
       };
 
       git_status = {
-        format = "[$all_status$ahead_behind]($style) ";
-        stashed = "[󰏗 ](#f4c430)";
-        staged = "[󰄬 ](#a2ff76)";
-        modified = "[󰏫 ](#daa520)";
-        deleted = "[󰅖 ](#ff9933)";
-        renamed = "[󰑕 ](#ee0000)";
-        untracked = "[󰌵 ](#ffa500)";
-        conflicted = "[󰘬 ](#b87333)";
-        ahead = "[󰁔 \${count}](#ffbf00)";
-        behind = "[󰁍 \${count}](#a2a2d0)";
-        diverged = "[󰃻 ](#edc9af)";
+        format = "[\\[$all_status$ahead_behind\\]]($style) ";
+        stashed = "[ 󰏗](#f4c430)";
+        staged = "[ 󰄬](#a2ff76)";
+        modified = "[ 󰏫](#daa520)";
+        deleted = "[ 󰅖](#ff9933)";
+        renamed = "[ 󰑕](#ee0000)";
+        untracked = "[ ?](#ffa500)";
+        conflicted = "[ 󰘬](#b87333)";
+        ahead = "[ 󰁔\${count}](#ffbf00)";
+        behind = "[ 󰁍\${count}](#a2a2d0)";
+        diverged = "[ 󰃻](#edc9af)";
       };
 
       hostname = {
@@ -526,6 +688,50 @@ in
       warn-dirty = false;
     };
   };
+
+  # ==========================================================================
+  # DARWIN-ONLY: Install Karabiner-Elements via Homebrew (needs system drivers)
+  # ==========================================================================
+  home.activation.installKarabiner = lib.mkIf isDarwin (
+    lib.hm.dag.entryAfter ["writeBoundary"] ''
+      # Karabiner needs system drivers that only the official installer provides
+      BREW="/opt/homebrew/bin/brew"
+      if ! /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/Karabiner-Elements.app/Contents/Info.plist" 2>/dev/null | grep -q "org.pqrs.Karabiner-Elements"; then
+        if [[ -x "$BREW" ]]; then
+          echo "Installing Karabiner-Elements via Homebrew..."
+          "$BREW" install --cask karabiner-elements || true
+        else
+          echo "WARNING: Karabiner-Elements requires Homebrew installation."
+          echo "Install Homebrew first, then run: brew install --cask karabiner-elements"
+        fi
+      fi
+    ''
+  );
+
+  # Note: Karabiner config is NOT managed by nix (triggers keyboard dialog on each change)
+  # Config lives at ~/.config/karabiner/karabiner.json - edit manually if needed
+  # Current mappings: Cmd+f/b/d/u/l/y/./,/</> -> Meta equivalents in terminals
+
+  # ==========================================================================
+  # DARWIN-ONLY: Create Spotlight-indexable aliases for nix apps
+  # ==========================================================================
+  home.activation.createAppAliases = lib.mkIf isDarwin (
+    lib.hm.dag.entryAfter ["writeBoundary"] ''
+      # Create Finder aliases in /Applications so Spotlight can find nix apps
+      for app in Alacritty; do
+        if [[ -e "$HOME/.nix-profile/Applications/$app.app" ]]; then
+          # Remove existing aliases (handles both "App.app" and "App.app alias" variants)
+          rm -f "/Applications/$app.app" "/Applications/$app.app alias" 2>/dev/null || true
+          # Create new Finder alias (Finder may add " alias" suffix)
+          /usr/bin/osascript -e "tell application \"Finder\" to make alias file to POSIX file \"$HOME/.nix-profile/Applications/$app.app\" at POSIX file \"/Applications\"" >/dev/null 2>&1 || true
+          # Rename if Finder added " alias" suffix
+          if [[ -e "/Applications/$app.app alias" ]]; then
+            mv "/Applications/$app.app alias" "/Applications/$app.app"
+          fi
+        fi
+      done
+    ''
+  );
 
   # ==========================================================================
   # DARWIN-ONLY: Emacs daemon via launchd
