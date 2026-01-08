@@ -17,9 +17,13 @@
     nix-casks = {
       url = "github:atahanyorganci/nix-casks";
     };
+
+    nix-colors = {
+      url = "github:Misterio77/nix-colors";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, emacs-config, nix-casks, ... }@inputs:
+  outputs = { nixpkgs, home-manager, emacs-config, nix-casks, nix-colors, ... }@inputs:
     let
       user = "mtr21pqh";
       systems = [ "aarch64-darwin" "x86_64-darwin" "x86_64-linux" "aarch64-linux" ];
@@ -27,8 +31,11 @@
 
       mkHomeConfig = system: home-manager.lib.homeManagerConfiguration {
         pkgs = nixpkgs.legacyPackages.${system};
-        extraSpecialArgs = { inherit inputs emacs-config; };
-        modules = [ ./home.nix ];
+        extraSpecialArgs = { inherit inputs emacs-config nix-colors; };
+        modules = [
+          nix-colors.homeManagerModules.default
+          ./home.nix
+        ];
       };
     in
     {
