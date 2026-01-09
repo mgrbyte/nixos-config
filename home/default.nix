@@ -18,6 +18,7 @@ in {
     ./tmux.nix
     ./darwin.nix
     ./age.nix
+    ./llms.nix
   ];
 
   # Make shared variables available to all modules
