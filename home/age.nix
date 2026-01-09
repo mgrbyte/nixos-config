@@ -34,6 +34,10 @@ in {
         source = "${nix-secrets}/work.env.age";
         symlinks = [ "${homeDir}/.work.env" ];
       };
+      "uv-config" = {
+        source = "${nix-secrets}/uv.toml.age";
+        symlinks = [ "${homeDir}/.config/uv/uv.toml" ];
+      };
     };
   };
 

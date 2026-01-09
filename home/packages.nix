@@ -83,6 +83,7 @@ in {
 
     # Python packages
     python3
+    uv
     virtualenv
 
     # Platform-specific pinentry
