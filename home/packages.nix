@@ -37,17 +37,15 @@ in {
     docker
     docker-compose
 
+
     # Media-related packages
-    emacsPackages.nerd-icons
-    emacsPackages.nerd-icons-completion
-    emacsPackages.nerd-icons-dired
-    emacsPackages.nerd-icons-ibuffer
     dejavu_fonts
     ffmpeg
     fd
     font-awesome
     hack-font
     nerd-fonts.hack
+    nerd-fonts.symbols-only
     noto-fonts
     noto-fonts-color-emoji
 
@@ -88,7 +86,57 @@ in {
 
     # Platform-specific pinentry
     (if isDarwin then pinentry_mac else pinentry-curses)
-  ] ++ lib.optionals isDarwin ([
+  ] ++ (with pkgs.emacsPackages; [
+    # Emacs packages - all managed by nix (not MELPA)
+    abyss-theme
+    clojure-mode
+    company
+    dash
+    dashboard
+    dirvish
+    dockerfile-mode
+    editorconfig
+    exec-path-from-shell
+    f
+    flycheck-clj-kondo
+    gist
+    google-this
+    helm
+    helm-projectile
+    jinja2-mode
+    js2-mode
+    json-mode
+    keyfreq
+    lsp-mode
+    lsp-ui
+    magit
+    markdown-mode
+    nerd-icons
+    nerd-icons-completion
+    nerd-icons-dired
+    nerd-icons-ibuffer
+    nix-mode
+    org
+    paredit
+    powerline
+    projectile
+    py-snippets
+    python-pytest
+    rainbow-delimiters
+    s
+    sass-mode
+    treemacs
+    treemacs-magit
+    treemacs-nerd-icons
+    treemacs-projectile
+    vcl-mode
+    vterm
+    vterm-toggle
+    whitespace-cleanup-mode
+    wucuo
+    yaml-mode
+    zygospore
+  ]) ++ lib.optionals isDarwin ([
     pkgs.dockutil  # Dock management tool
   ] ++ (with inputs.nix-casks.packages.${pkgs.system}; [
     # macOS GUI applications via nix-casks
