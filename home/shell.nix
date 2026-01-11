@@ -161,6 +161,7 @@
       rg-jsonl = "search --type=jsonl";
       rg-ini = "search --type=ini";
       rg-md = "search --type=markdown";
+      rg-nix = "search --type=nix";
       rg-py = "search --type=python";
       rg-toml = "search --type=toml";
       rg-ts = "search --type=typescript";
