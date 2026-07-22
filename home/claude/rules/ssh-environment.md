@@ -29,10 +29,15 @@ intact (the decrypt side is rarely the fault — check its log at
 - **NEVER suggest `UseKeychain`, `--apple-load-keychain`, or routing git through
   `/usr/bin/ssh`.** Proposed many times; does not work in this environment (unsupported by the
   nix-profile ssh; see nix-config history: `d9e5c17`, `0300531`). Do not relitigate.
-- **Interim unblock** (user's terminal — needs a TTY):
-  `ssh-add ~/.ssh/id_ed25519_mtr21pqh ~/.ssh/id_mgrbyte_github`
-- **Chosen durable direction** (Matt, 2026-07-22): package a working askpass in nix-config and
-  set `SSH_ASKPASS` / `SSH_ASKPASS_REQUIRE=prefer` in the session environment, optionally plus a
-  login-time `ssh-add` launchd job that uses it.
+- **Interim unblock** (any shell — passphrases come from the macOS Keychain, no TTY needed):
+  `/usr/bin/ssh-add --apple-load-keychain`
+- **The working mechanism**: passphrases are stored in the macOS Keychain (age.nix
+  `loadSshKeysToAgent` activation); `/usr/bin/ssh-add --apple-load-keychain` reloads the agent
+  from it non-interactively. The Apple ssh-add *flags* work fine — only the `UseKeychain`
+  *config option* is fatal to nix ssh.
+- **Durable fix (2026-07-22)**: `launchd.agents.ssh-load-keychain` in ssh.nix — RunAtLoad +
+  WatchPaths on `~/.ssh/agent` (a fresh socket appears there when the agent restarts), running
+  the Keychain reload with output logged to `~/.cache/ssh-load-keychain.log`. The zshrc loader
+  remains as belt-and-braces.
 - `glab`/API tooling authenticates over HTTPS with tokens — GitLab issue/MR operations are NOT
   blocked by an empty ssh agent; only pushes/pulls over ssh are.

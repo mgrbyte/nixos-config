@@ -54,4 +54,21 @@ in {
   home.activation.ensureSshSocketsDir = lib.hm.dag.entryAfter ["writeBoundary"] ''
     mkdir -p ${homeDir}/.ssh/sockets
   '';
+
+  # Reload agent keys from the macOS Keychain whenever the agent (re)starts.
+  # The zshrc loader only fires on new interactive shells, so an agent restart
+  # mid-session leaves long-lived contexts (tmux, emacs/magit) with an empty
+  # agent. Apple's launchd ssh-agent creates a fresh socket under ~/.ssh/agent
+  # on start; WatchPaths turns that into the reload trigger. Must be Apple's
+  # /usr/bin/ssh-add — the nix ssh-add has no Keychain support.
+  launchd.agents.ssh-load-keychain = lib.mkIf pkgs.stdenv.isDarwin {
+    enable = true;
+    config = {
+      ProgramArguments = [ "/usr/bin/ssh-add" "--apple-load-keychain" ];
+      RunAtLoad = true;
+      WatchPaths = [ "${homeDir}/.ssh/agent" ];
+      StandardOutPath = "${homeDir}/.cache/ssh-load-keychain.log";
+      StandardErrorPath = "${homeDir}/.cache/ssh-load-keychain.log";
+    };
+  };
 }
