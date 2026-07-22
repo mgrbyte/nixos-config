@@ -1,6 +1,6 @@
 # SSH Environment (macOS)
 
-How ssh works on this machine, and what Claude must and must not suggest when it breaks.
+How ssh works on this home-manager/nix-managed MacOS, and what Claude must and must not suggest when it breaks.
 (Captured 2026-07-22 after the UseKeychain suggestion recurred across many sessions.)
 
 ## The setup
