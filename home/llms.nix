@@ -39,6 +39,7 @@ let
     "rules/python-scripts.md"
     "rules/python.md"
     "rules/research-first.md"
+    "rules/ssh-environment.md"
     "rules/testing-patterns.md"
     "rules/README.md"
   ];
