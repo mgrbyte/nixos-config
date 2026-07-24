@@ -46,6 +46,7 @@ let
 
   publicHooks = map (mkClaudeLink claudePublicDir) [
     "hooks/hooks.json"
+    "hooks/allow-cruft-sweep-rm.sh"
     "hooks/posttooluse-format.sh"
     "hooks/pretooluse-guard.py"
     "hooks/stop-hook-check.py"
