@@ -50,6 +50,8 @@ section below (or `testing-patterns.md`). This is a blocking step, not advisory.
   `config.Config` resolved into `models.gitlab.AgendaScope` (pure data, named for what it
   is) plus module-level `config.load`/`config.dump` (the file format), not into
   `config.Settings`.
+  **Never call a data record/sidecar a "descriptor"** — it collides with Python's
+  descriptor protocol; use the domain term instead.
 - **Single exit** — prefer one return path; avoid multiple returns. Positive conditionals — avoid
   negation where a positive form reads as well. British English spelling.
 
