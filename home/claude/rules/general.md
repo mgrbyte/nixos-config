@@ -1,5 +1,9 @@
 # General Coding Preferences
 
+- Never append trailing `#` comments to shell command lines given for the user to copy-paste —
+  zsh without `interactivecomments` errors on them (`zsh: bad pattern: #`). Explain commands in
+  prose around the block, keep the block bare (captured 2026-07-27).
+
 - Do not intermix "business logic" with presentation.
 - Use British English for spelling words in code (e.g., `tokenise` not `tokenize`, `colour` not `color`).
 - Trim trailing white space before saving files.
